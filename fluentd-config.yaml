@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-config
+data:
+  fluent.conf: |
+    <match fluent.**>
+        @type null
+    </match>
+    <source>
+      @type tail
+      path /var/log/containers/*.log
+      pos_file /var/log/app.log.pos
+      tag kubernetes.*
+      read_from_head true
+      <parse>
+        @type regexp
+        expression /^(?<time>.+?) (?<stream>stdout|stderr) (?<logtag>[FP]) (?<log>.*)$/
+        time_format %Y-%m-%dT%H:%M:%S.%N%z
+      </parse>
+    </source>
+    <match **>
+       @type elasticsearch
+       @log_level info
+       include_tag_key true
+       host "quickstart-es-http"
+       port "9200"
+       user "elastic"
+       password "xxxxxxxxxxxxxxxxxxxxxx"
+       scheme "https"
+       ssl_verify true
+       ssl_version "TLSv1_2"
+       ca_file "/etc/fluentd/elasticsearch/ca.crt"
+       reload_connections true
+       logstash_format true
+       logstash_prefix logstash
+       <buffer>
+           @type file
+           path /fluentd/buffer/kubernetes.system.buffer
+           flush_mode interval
+           retry_type exponential_backoff
+           flush_thread_count 2
+           flush_interval 5s
+           retry_forever true
+           reconnect_on_error true
+           retry_max_interval 30
+           retry_timeout 3600
+           chunk_limit_size 2M
+           queue_limit_length 32
+           total_limit_size 512m
+           overflow_action block
+       </buffer>
+    </match>

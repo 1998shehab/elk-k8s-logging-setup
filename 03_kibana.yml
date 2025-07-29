@@ -1,0 +1,24 @@
+apiVersion: kibana.k8s.elastic.co/v1
+kind: Kibana
+metadata:
+  name: quickstart
+spec:
+  version: 7.17.24
+  count: 1
+  elasticsearchRef:
+    name: quickstart  
+  http:
+    tls:
+      selfSignedCertificate:
+        disabled: true
+
+  podTemplate:
+    spec:
+      nodeSelector:
+        nodegroup-type: efk-group
+      tolerations:
+        - key: "efk-key"
+          operator: "Equal"
+          value: "true"
+          effect: "NoSchedule"
+
